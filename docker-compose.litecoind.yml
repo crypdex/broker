@@ -41,7 +41,6 @@ services:
   litecoind:
     image: sparkswap/litecoind:0.4.1-beta
     volumes:
-      - ${DATA_DIR:?DATA_DIR is required}/shared:/shared
       - ${DATA_DIR:?DATA_DIR is required}/litecoin:/data
     environment:
       - RPC_USER=${LTC_RPC_USER}
@@ -57,7 +56,6 @@ services:
         max-size: 50m
 
 volumes:
-  shared:
   litecoin:
   lnd_ltc:
 
