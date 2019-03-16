@@ -9,7 +9,7 @@
 #
 ##########################################
 
-version: '2.4'
+version: "2.4"
 
 services:
   lnd_btc:
@@ -42,5 +42,4 @@ volumes:
   shared:
   bitcoin:
 
-networks:
-  broker:
+networks: broker:
