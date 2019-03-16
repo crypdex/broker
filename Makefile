@@ -15,3 +15,6 @@ start:
 
 stop:
 	$(docker-compose) down -t 60
+
+latest:
+	bash ./scripts/latest.sh
