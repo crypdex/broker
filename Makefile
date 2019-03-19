@@ -22,3 +22,7 @@ node:
 	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
 	source ~/.bashrc
 	nvm install 8.11
+
+latest:
+	bash ./scripts/latest.sh
+
