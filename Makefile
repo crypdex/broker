@@ -2,7 +2,6 @@ include ./.env
 export
 
 # DATA_DIR?=~/data
-
 SERVICES?=litecoin bitcoin sparkswap
 
 # HERE BE DRAGONS
@@ -15,3 +14,11 @@ start:
 
 stop:
 	$(docker-compose) down -t 60
+
+build:
+	bash ./scripts/build.sh
+
+node:
+	curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+	source ~/.bashrc
+	nvm install 8.11
