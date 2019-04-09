@@ -33,7 +33,7 @@ function handle404 (logger, req, res) {
  * @param {string} opts.logger
  * @returns {ExpressApp}
  */
-function createHttpServer (protoPath, rpcAddress, { disableAuth = false, enableCors = false, privKeyPath, pubKeyPath, logger }) {
+function createHttpServer (protoPath, rpcAddress, { disableAuth = false, enableCors = false, isCertSelfSigned = true, privKeyPath, pubKeyPath, httpMethods, logger }) {
   const app = express()
 
   app.use(helmet())
@@ -50,27 +50,25 @@ function createHttpServer (protoPath, rpcAddress, { disableAuth = false, enableC
     app.use(corsMiddleware())
   }
 
-  // If the RPC address we use for daemon is set to a default route (0.0.0.0)
-  // then we want to make sure that we are instead making a request w/ grpc-gateway
-  // to `localhost`. `0.0.0.0` would be an invalid address w/ the current cert
-  // setup
-  if (rpcAddress.includes('0.0.0.0')) {
-    rpcAddress = rpcAddress.replace('0.0.0.0', 'localhost')
-  }
-
   if (disableAuth) {
-    app.use('/', grpcGateway([`/${protoPath}`], rpcAddress))
+    app.use('/', grpcGateway([`/${protoPath}`], rpcAddress, { whitelist: httpMethods }))
     app.use(handle404.bind(null, logger))
     return app
   } else {
     const key = fs.readFileSync(privKeyPath)
     const cert = fs.readFileSync(pubKeyPath)
-    const channelCredentials = grpc.credentials.createSsl(cert)
+
+    let channelCredentials = grpc.credentials.createSsl()
+
+    if (isCertSelfSigned) {
+      logger.debug(`Using self-signed cert to connect to internal RPC for proxy: cert: ${pubKeyPath}`)
+      channelCredentials = grpc.credentials.createSsl(cert)
+    }
+
+    app.use('/', grpcGateway([`/${protoPath}`], rpcAddress, { credentials: channelCredentials, whitelist: httpMethods }))
+    app.use(handle404.bind(null, logger))
 
     logger.debug(`Securing RPC proxy connections with TLS: key: ${privKeyPath}, cert: ${pubKeyPath}`)
-
-    app.use('/', grpcGateway([`/${protoPath}`], rpcAddress, channelCredentials))
-    app.use(handle404.bind(null, logger))
     return https.createServer({ key, cert }, app)
   }
 }

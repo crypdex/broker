@@ -43,7 +43,6 @@ services:
       - ZMQPUBRAWTX=tcp://litecoind:28334
       - RPC_USER=${LTC_RPC_USER:?LTC_RPC_USER is required}
       - RPC_PASS=${LTC_RPC_PASS:?LTC_RPC_PASS is required}
-      - RPC_HOST=${LTC_RPC_HOST:-}
       - NETWORK=${NETWORK}
       - DEBUG=info
       - EXTERNAL_ADDRESS="${EXTERNAL_LTC_ADDRESS}:10114"

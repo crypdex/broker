@@ -163,10 +163,6 @@ async function commit (args, opts, logger) {
 
     const totalUncommittedBalance = Big(uncommittedBalance)
 
-    if (totalUncommittedBalance.eq(0)) {
-      return logger.info('Your current uncommitted balance is 0, please add funds to your daemon')
-    }
-
     // We try to take the lowest total here between 2 Big numbers due to a
     // commit limit specified as `maxChannelBalance` in the currency configuration
     let maxSupportedBalance = totalUncommittedBalance
@@ -192,10 +188,6 @@ async function commit (args, opts, logger) {
     const answer = await askQuestion(`Are you OK committing ${maxSupportedBalance.toString()} ${symbol} to sparkswap? (Y/N)`)
 
     if (!ACCEPTED_ANSWERS.includes(answer.toLowerCase())) return
-
-    if (maxSupportedBalance.gt(uncommittedBalance)) {
-      throw new Error(`Amount specified is larger than your current uncommitted balance of ${uncommittedBalance} ${symbol}`)
-    }
 
     await client.walletService.commit({ balance: maxSupportedBalance.toString(), symbol, market })
 
@@ -644,13 +636,13 @@ module.exports = (program) => {
     .option('--wallet-address <wallet-address>', 'Address to send the coins to', null, null, true)
     .option('--rpc-address [rpc-address]', RPC_ADDRESS_HELP_STRING)
     .command(`wallet ${SUPPORTED_COMMANDS.RELEASE}`, 'Closes channels open on the specified market')
-    .option('--market <marketName>', MARKET_NAME_HELP_STRING, null, null, true)
+    .option('--market <marketName>', MARKET_NAME_HELP_STRING, validations.isMarketName, null, true)
     .option('--force', 'Force close all channels', null, false)
     .option('--rpc-address [rpc-address]', RPC_ADDRESS_HELP_STRING)
     .command(`wallet ${SUPPORTED_COMMANDS.NETWORK_ADDRESS}`, 'Payment Channel Network Public key for a given currency')
     .argument('<symbol>', `Supported currencies: ${SUPPORTED_SYMBOLS.join('/')}`)
     .option('--rpc-address [rpc-address]', RPC_ADDRESS_HELP_STRING)
     .command(`wallet ${SUPPORTED_COMMANDS.NETWORK_STATUS}`, 'Payment Channel Network status for trading in different markets')
-    .option('--market [marketName]', MARKET_NAME_HELP_STRING, null, null, true)
+    .option('--market <marketName>', MARKET_NAME_HELP_STRING, validations.isMarketName, null, true)
     .option('--rpc-address [rpc-address]', RPC_ADDRESS_HELP_STRING)
 }

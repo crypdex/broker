@@ -26,10 +26,15 @@ describe('broker daemon', () => {
   let privIdKeyPath
   let pubIdKeyPath
   let rpcAddress
+  let rpcInternalProxyAddress
+  let rpcHttpProxyAddress
+  let rpcHttpProxyMethods
   let interchainRouterAddress
   let dataDir
   let marketNames
   let disableAuth
+  let enableCors
+  let isCertSelfSigned
   let relayerOptions
   let brokerDaemonOptions
   let rpcUser
@@ -102,6 +107,9 @@ describe('broker daemon', () => {
     privIdKeyPath = '/my/private/id/key/path'
     pubIdKeyPath = '/my/public/id/key/path'
     rpcAddress = '0.0.0.0:27492'
+    rpcInternalProxyAddress = 'my-fake-domain:27492'
+    rpcHttpProxyAddress = '0.0.0.0:28592'
+    rpcHttpProxyMethods = [ '/v1/admin/healthcheck' ]
     interchainRouterAddress = '0.0.0.0:40369'
     dataDir = '/datadir'
     marketNames = [ 'BTC/LTC' ]
@@ -120,10 +128,15 @@ describe('broker daemon', () => {
       }
     }
     disableAuth = false
+    enableCors = true
+    isCertSelfSigned = false
     relayerOptions = {
       relayerCertPath: '/fake/path',
       relayerRpcHost: 'fakehost'
     }
+
+    rpcUser = 'fakeUser'
+    rpcPass = 'fakePass'
 
     brokerDaemonOptions = {
       privRpcKeyPath,
@@ -131,11 +144,16 @@ describe('broker daemon', () => {
       privIdKeyPath,
       pubIdKeyPath,
       rpcAddress,
+      rpcInternalProxyAddress,
+      rpcHttpProxyAddress,
+      rpcHttpProxyMethods,
       interchainRouterAddress,
       dataDir,
       marketNames,
       engines,
       disableAuth,
+      enableCors,
+      isCertSelfSigned,
       rpcUser,
       rpcPass,
       relayerOptions,
@@ -185,6 +203,77 @@ describe('broker daemon', () => {
         expect(LndEngine).to.have.been.calledTwice()
         expect(LndEngine).to.have.been.calledWith(engines.BTC.lndRpc, 'BTC', { logger, tlsCertPath: engines.BTC.lndTls, macaroonPath: engines.BTC.lndMacaroon })
         expect(LndEngine).to.have.been.calledWith(engines.BTC.lndRpc, 'LTC', { logger, tlsCertPath: engines.BTC.lndTls, macaroonPath: engines.BTC.lndMacaroon })
+      })
+    })
+
+    describe('BrokerRPCServer', () => {
+      it('creates a BrokerRPCServer', () => {
+        expect(rpcServer).to.have.been.calledOnce()
+        expect(rpcServer).to.have.been.calledWithNew()
+        expect(brokerDaemon.rpcServer).to.be.an.instanceOf(rpcServer)
+      })
+
+      it('sets the rpc address', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcAddress: rpcInternalProxyAddress }))
+      })
+
+      it('defaults to localhost', () => {
+        delete brokerDaemonOptions.rpcInternalProxyAddress
+        // eslint-disable-next-line
+        new BrokerDaemon(brokerDaemonOptions)
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcAddress: 'localhost:27492' }))
+      })
+
+      it('sets the rpc http proxy address', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcHttpProxyAddress }))
+      })
+
+      it('sets the rpc http proxy methods', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcHttpProxyMethods }))
+      })
+
+      it('sets the logger', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ logger }))
+      })
+
+      it('sets the engines', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ engines: brokerDaemon.engines }))
+      })
+
+      it('sets the relayer client', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ relayer: brokerDaemon.relayer }))
+      })
+
+      it('sets the block order worker', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ blockOrderWorker: brokerDaemon.blockOrderWorker }))
+      })
+
+      it('sets the private key path', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ privKeyPath: privRpcKeyPath }))
+      })
+
+      it('sets the public key path', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ pubKeyPath: pubRpcKeyPath }))
+      })
+
+      it('sets the auth', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ disableAuth }))
+      })
+
+      it('sets cors', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ enableCors }))
+      })
+
+      it('sets cert signer', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ isCertSelfSigned }))
+      })
+
+      it('sets the username', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcUser }))
+      })
+
+      it('sets the password', () => {
+        expect(rpcServer).to.have.been.calledWith(sinon.match({ rpcPass }))
       })
     })
 
@@ -370,10 +459,27 @@ describe('broker daemon', () => {
     })
   })
 
-  describe('#initialize', () => {
+  describe('#initializeBlockOrder', () => {
+    let engineValidatePromise
+
     beforeEach(() => {
+      engineValidatePromise = sinon.stub()
       brokerDaemon = new BrokerDaemon(brokerDaemonOptions)
-      brokerDaemon.validateEngines = sinon.stub().returns()
+    })
+
+    it('calls initialize on the blockorder', async () => {
+      await brokerDaemon.initializeBlockOrder(engineValidatePromise)
+      expect(brokerDaemon.blockOrderWorker.initialize).to.have.been.calledOnceWith(engineValidatePromise)
+    })
+  })
+
+  describe('#initialize', () => {
+    let validatePromise
+
+    beforeEach(() => {
+      validatePromise = sinon.stub()
+      brokerDaemon = new BrokerDaemon(brokerDaemonOptions)
+      brokerDaemon.validateEngines = sinon.stub().returns(validatePromise)
       brokerDaemon.initializeMarkets = sinon.stub().resolves()
     })
 
@@ -401,7 +507,7 @@ describe('broker daemon', () => {
     })
 
     it('initializes the block order worker', async () => {
-      expect(BlockOrderWorker.prototype.initialize).to.have.been.calledOnce()
+      expect(BlockOrderWorker.prototype.initialize).to.have.been.calledOnceWith(validatePromise)
     })
   })
 
@@ -426,6 +532,13 @@ describe('broker daemon', () => {
 
     it('validates the node config on each engine', () => {
       brokerDaemon.validateEngines()
+
+      expect(btcEngine.validateEngine).to.have.been.called()
+      expect(ltcEngine.validateEngine).to.have.been.called()
+    })
+
+    it('synchronously validates the node config on each engine', async () => {
+      await brokerDaemon.validateEngines()
 
       expect(btcEngine.validateEngine).to.have.been.called()
       expect(ltcEngine.validateEngine).to.have.been.called()
@@ -476,6 +589,7 @@ describe('broker daemon', () => {
 
   describe('rpcUser', () => {
     it('defaults to null', () => {
+      delete brokerDaemonOptions.rpcUser
       brokerDaemon = new BrokerDaemon(brokerDaemonOptions)
       expect(brokerDaemon.rpcUser).to.be.null()
     })
@@ -489,6 +603,7 @@ describe('broker daemon', () => {
 
   describe('rpcPass', () => {
     it('defaults to null', () => {
+      delete brokerDaemonOptions.rpcPass
       brokerDaemon = new BrokerDaemon(brokerDaemonOptions)
       expect(brokerDaemon.rpcPass).to.be.null()
     })

@@ -48,11 +48,15 @@ program
   .option('--relayer.cert-path [cert-path]', 'Location of the root certificate for the SparkSwap Relayer (only used in development)', validations.isFormattedPath, config.relayer.certPath)
   // Broker RPC configuration options
   .option('--rpc.address [rpc-address]', 'Add a host/port to listen for daemon RPC connections', validations.isHost, config.rpc.address)
+  .option('--rpc.proxy-address [rpc-proxy-address]', 'Add a host/port where the daemon RPC will be reachable', validations.isHost, config.rpc.proxyAddress)
   .option('--rpc.http-proxy-address [rpc-http-proxy-address]', 'Add a host/port to listen for HTTP RPC proxy connections', validations.isHost, config.rpc.httpProxyAddress)
+  .option('--rpc.http-proxy-methods [rpc-http-proxy-methods]', 'Comma-separated methods for the HTTP RPC Proxy', program.String, config.rpc.httpProxyMethods)
+  .option('--rpc.http-proxy-cors [enable-cors]', 'Enable CORS for the HTTP RPC Proxy', program.BOOL, config.enableCors)
   .option('--rpc.user [rpc-user]', 'Broker rpc user name', program.String, config.rpc.user)
   .option('--rpc.pass [rpc-pass]', 'Broker rpc password', program.String, config.rpc.pass)
   .option('--rpc.pub-key-path [rpc-pub-key-path]', 'Location of the public key for the broker\'s rpc', validations.isFormattedPath, config.rpc.pubKeyPath)
   .option('--rpc.priv-key-path [rpc-priv-key-path]', 'Location of private key for the broker\'s rpc', validations.isFormattedPath, config.rpc.privKeyPath)
+  .option('--rpc.self-signed-cert [rpc-cert-self-signed]', 'Whether the certificate used to secure the rpc connection is self-signed', program.BOOL, config.rpc.selfSignedCert)
 
 // For each currency, we will add expected options for an engine
 for (let currency of currencies) {
@@ -81,11 +85,15 @@ program
       relayerRpcHost,
       relayerCertPath,
       rpcAddress,
+      rpcProxyAddress: rpcInternalProxyAddress,
       rpcHttpProxyAddress,
+      rpcHttpProxyMethods: proxyMethods,
+      rpcHttpProxyCors: enableCors,
       rpcUser,
       rpcPass,
       rpcPubKeyPath: pubRpcKeyPath,
-      rpcPrivKeyPath: privRpcKeyPath
+      rpcPrivKeyPath: privRpcKeyPath,
+      rpcSelfSignedCert: isCertSelfSigned
     } = opts
 
     const engines = {}
@@ -109,6 +117,9 @@ program
     // `markets` will be a string of market symbols that are delimited by a comma
     const marketNames = (markets || '').split(',').filter(m => m)
 
+    // proxyMethods will be a string of method names that are delimited by a comma
+    const rpcHttpProxyMethods = (proxyMethods || '').split(',').filter(p => p)
+
     const brokerOptions = {
       network,
       pubRpcKeyPath,
@@ -116,12 +127,16 @@ program
       privIdKeyPath,
       pubIdKeyPath,
       rpcAddress,
+      rpcInternalProxyAddress,
       rpcHttpProxyAddress,
+      rpcHttpProxyMethods,
       interchainRouterAddress,
       dataDir,
       marketNames,
       engines,
       disableAuth,
+      enableCors,
+      isCertSelfSigned,
       rpcUser,
       rpcPass,
       relayerOptions: {
@@ -129,6 +144,7 @@ program
         relayerCertPath
       }
     }
+
     return new BrokerDaemon(brokerOptions).initialize()
   })
 
