@@ -63,11 +63,5 @@ typings/
 # Mac
 .DS_Store
 
-<<<<<<< HEAD
-# Proto build files
-#proto
-
-=======
->>>>>>> upstream/master
 # Override file which we use dynamically in the broker setup
 docker-compose.override.yml

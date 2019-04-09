@@ -15,6 +15,8 @@ start:
 stop:
 	$(docker-compose) down -t 60
 
+
+
 build:
 	bash ./scripts/build.sh
 
@@ -26,3 +28,9 @@ node:
 latest:
 	bash ./scripts/latest.sh
 
+#########
+# DOCKER
+#########
+
+docker-build:
+	docker build . -f docker/sparkswapd/Dockerfile -t crypdex/sparkswap
