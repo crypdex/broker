@@ -1,13 +1,14 @@
 ARG NODE_VERSION=8.11
+ARG IMAGE=node:${NODE_VERSION}-alpine
 
-FROM node:${NODE_VERSION}-alpine as builder
+FROM ${IMAGE} as builder
 
 LABEL maintainer="SparkSwap <dev@sparkswap.com>"
 
 RUN apk update && apk --no-cache add bash ca-certificates g++ git make openssl python wget && \
-    wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
-    wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk && \
-    apk add glibc-2.28-r0.apk
+  wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+  wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk && \
+  apk add glibc-2.28-r0.apk
 
 WORKDIR /home/app
 
@@ -25,7 +26,7 @@ WORKDIR /home/app/broker-cli
 RUN npm install --quiet --production
 
 # Create a final image as this will be < 50% the size of the build image
-FROM node:${NODE_VERSION}-alpine as final
+FROM ${IMAGE} as final
 
 RUN apk update
 RUN apk add bash curl

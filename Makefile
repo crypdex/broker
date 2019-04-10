@@ -33,4 +33,5 @@ latest:
 #########
 
 docker-build:
-	docker build . -f docker/sparkswapd/Dockerfile -t crypdex/sparkswap
+	bash ./scripts/docker-release.sh
+
