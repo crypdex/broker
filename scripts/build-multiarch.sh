@@ -7,11 +7,13 @@
 
 ORG="crypdex"
 SERVICE="sparkswap-broker"
-VERSION="0.6.1-beta"
-ARCH="arm64v8"
+VERSION="0.6.2-beta"
 NODE_VERSION="8.11"
+#ARCH="arm64v8"
+
 
 echo ${ARCH}
+
 # Build and push builds for these architectures
 for arch in ${ARCH}; do
   if [[ ${arch} = "arm64v8" ]]; then
@@ -23,15 +25,6 @@ for arch in ${ARCH}; do
   echo "=> Building Sparkswap Broker {arch: ${arch}, image: ${IMAGE}}"
 
   docker build --build-arg IMAGE=${IMAGE} -f docker/sparkswapd/Dockerfile.multiarch -t ${ORG}/${SERVICE}:${VERSION}-${arch} .
-  #  docker push ${ORG}/${SERVICE}:${VERSION}-${arch}
-
+  docker push ${ORG}/${SERVICE}:${VERSION}-${arch}
 done
-
-#
-## Now create a manifest that points from latest to the specific architecture
-#rm -rf ~/.docker/manifests/*
-#
-## version
-#docker manifest create ${ORG}/${SERVICE}:${VERSION} ${ORG}/${SERVICE}:${VERSION}-x86_64 ${ORG}/${SERVICE}:${VERSION}-arm64v8
-#docker manifest push ${ORG}/${SERVICE}:${VERSION}
 

@@ -3,7 +3,7 @@ ARG IMAGE
 
 FROM ${IMAGE} as builder
 
-LABEL maintainer="Crypdex <contact@sparkswap.com>"
+LABEL maintainer="Crypdex <contact@crypdex.io>"
 
 RUN apk update && apk --no-cache add bash ca-certificates g++ git make openssl python wget && \
     wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
