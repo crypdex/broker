@@ -10,13 +10,19 @@ SERVICE="sparkswap-broker"
 VERSION="0.6.1-beta"
 ARCH="arm64v8 x86_64"
 NODE_VERSION="8.11"
-IMAGE=node:${NODE_VERSION}-alpine
+
+cd sparkswap-broker
 
 # Build and push builds for these architectures
 for arch in ${ARCH}; do
-  if [[${arch} = "arm64v8"]]; then
-    IMAGE=arm64v8/node:${NODE_VERSION}-alpine
+  if [[ ${arch} = "arm64v8" ]]; then
+    IMAGE="arm64v8/node:${NODE_VERSION}-alpine"
+  elif [[ ${arch} = "x86_64" ]]; then
+    IMAGE="node:${NODE_VERSION}-alpine"
   fi
+
+  echo "=> Building Sparkswap Broker {arch: ${arch}, image: ${IMAGE}}"
+
 
   docker build --build-arg IMAGE=${IMAGE} -f docker/sparkswapd/Dockerfile -t ${ORG}/${SERVICE}:${VERSION}-${arch} . && \
   docker push ${ORG}/${SERVICE}:${VERSION}-${arch}

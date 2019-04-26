@@ -1,5 +1,5 @@
 ARG NODE_VERSION=8.11
-ARG IMAGE=node:${NODE_VERSION}-alpine
+ARG IMAGE
 
 FROM ${IMAGE} as builder
 
@@ -14,7 +14,7 @@ WORKDIR /home/app
 
 COPY . /home/app
 
-RUN npm install --quiet --production
+RUN npm install --production
 # --no-docker is set so we don't get into an infinite loop
 # --no-identity makes it so we do not generate keys for the daemons identity because we do this externally
 # --no-certs  makes it so we do not re-generate tls certs for the daemon because we do this externally
@@ -23,7 +23,7 @@ RUN npm run build -- --no-docker --no-identity --no-certs
 # Go into broker-cli to install node modules
 WORKDIR /home/app/broker-cli
 
-RUN npm install --quiet --production
+RUN npm install --production
 
 # Create a final image as this will be < 50% the size of the build image
 FROM ${IMAGE} as final
