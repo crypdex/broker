@@ -14,9 +14,7 @@ WORKDIR /home/app
 
 COPY . /home/app
 
-USER node
-
-RUN npm install
+RUN npm install --quiet --production
 
 # --no-docker is set so we don't get into an infinite loop
 # --no-identity makes it so we do not generate keys for the daemons identity because we do this externally
