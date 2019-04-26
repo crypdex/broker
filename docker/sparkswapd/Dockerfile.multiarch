@@ -1,8 +1,9 @@
 ARG NODE_VERSION=8.11
+ARG IMAGE
 
-FROM node:${NODE_VERSION}-alpine as builder
+FROM ${IMAGE} as builder
 
-LABEL maintainer="SparkSwap <dev@sparkswap.com>"
+LABEL maintainer="Crypdex <contact@sparkswap.com>"
 
 RUN apk update && apk --no-cache add bash ca-certificates g++ git make openssl python wget && \
     wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
@@ -13,7 +14,10 @@ WORKDIR /home/app
 
 COPY . /home/app
 
-RUN npm install --quiet --production
+USER node
+
+RUN npm install
+
 # --no-docker is set so we don't get into an infinite loop
 # --no-identity makes it so we do not generate keys for the daemons identity because we do this externally
 # --no-certs  makes it so we do not re-generate tls certs for the daemon because we do this externally
@@ -22,10 +26,10 @@ RUN npm run build -- --no-docker --no-identity --no-certs
 # Go into broker-cli to install node modules
 WORKDIR /home/app/broker-cli
 
-RUN npm install --quiet --production
+RUN npm install --production
 
 # Create a final image as this will be < 50% the size of the build image
-FROM node:${NODE_VERSION}-alpine as final
+FROM ${IMAGE} as final
 
 RUN apk update
 RUN apk add bash curl
