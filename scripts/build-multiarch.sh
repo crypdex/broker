@@ -7,7 +7,7 @@
 
 ORG="crypdex"
 SERVICE="sparkswap-broker"
-VERSION="0.6.2-beta"
+VERSION="0.7.0-beta"
 NODE_VERSION="8.11"
 #ARCH="arm64v8"
 
